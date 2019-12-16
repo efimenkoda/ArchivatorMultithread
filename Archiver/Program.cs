@@ -14,23 +14,32 @@ namespace Archiver
         static void Main(string[] args)
         {
 
-            //string args0= "compress";
-            //string args1 = @"d:\TEMP\office.iso";
-            //string args2 = @"d:\TEMP\office.gz";
+            //string args0 = "compress";
+            //string args1 = @"lesson.MP4";
+            //string args2 = @"lesson.gz";
 
             //args0 = "decompress";
             //args1 = @"d:\TEMP\office.gz";
             //args2 = @"d:\TEMP\officeNew.iso";
 
-            string args0 = @"compress";
-            string args1 = @"d:\TEMP\DatabaseVyrabotka.mdf";
-            string args2 = @"d:\TEMP\DatabaseVyrabotka.gz";
-            GZipFileManager gZipFile = new GZipFileManager(args0, args1, args2);
+
+            string args0 = "compress";
+            string args1 = @"d:\TEMP\office.iso";
+            string args2 = @"d:\TEMP\office.gz";
 
             args0 = "decompress";
-            args1 = @"d:\TEMP\DatabaseVyrabotka.gz";
-            args2 = @"d:\TEMP\DatabaseVyrabotkaNew.mdf";
-            gZipFile = new GZipFileManager(args0, args1, args2);
+            args1 = @"d:\TEMP\office.gz";
+            args2 = @"d:\TEMP\officeNew.iso";
+
+            //string args0 = @"compress";
+            //string args1 = @"d:\TEMP\DatabaseVyrabotka.mdf";
+            //string args2 = @"d:\TEMP\DatabaseVyrabotka.gz";
+            GZipFileManager gZipFile = new GZipFileManager(args0, args1, args2);
+
+            //args0 = "decompress";
+            //args1 = @"d:\TEMP\DatabaseVyrabotka.gz";
+            //args2 = @"d:\TEMP\DatabaseVyrabotkaNew.mdf";
+            //gZipFile = new GZipFileManager(args0, args1, args2);
 
             Console.ReadLine();
         }

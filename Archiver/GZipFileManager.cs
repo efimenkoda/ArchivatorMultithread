@@ -4,12 +4,21 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Archiver
 {
+    
     public class GZipFileManager
     {
+        static int threadNumber = Environment.ProcessorCount;
+        static int blockSize = 1024 * 1024;
+        static byte[][] dataArray = new byte[threadNumber][];
+        
+        //static int dataArraySize = dataBlockSize * threadNumber;
+
+
         private string operation;
         private string sourceFile;
         private string destinationFile;
@@ -41,27 +50,104 @@ namespace Archiver
                 }
             }
         }
-
+        static object locker = new object();
         private void CreateGzip(FileStream sourceStream, FileStream destinationStream)
-        {
+        {       
+           
+            Thread[] pool;
             using (GZipStream compressionStream = new GZipStream(destinationStream, CompressionMode.Compress))
             {
-                sourceStream.CopyTo(compressionStream);
-                Console.WriteLine("Сжатие файла {0} завершено. Исходный размер: {1}  сжатый размер: {2}.",
-                            sourceFile, sourceStream.Length.ToString(), destinationStream.Length.ToString());
-            }
+                Console.WriteLine("Compress...");
+            
+            while (sourceStream.Position < sourceStream.Length)
+            {
 
+                pool = new Thread[threadNumber];
+                for (int i = 0; i < threadNumber; i++)
+                {
+
+                    dataArray[i] = new byte[blockSize];
+                    sourceStream.Read(dataArray[i], 0, blockSize);
+
+                        pool[i] = new Thread(() =>
+                        {                            
+                            lock (locker)
+                            {                                
+                                compressionStream.Write(dataArray[i], 0, blockSize);
+                            }
+                        });
+                        pool[i].Start();
+                        Console.WriteLine(pool[i].ManagedThreadId);
+                        pool[i].Join();                       
+
+            }
+                                   
+                }
+            }
+            
+        }
+
+        private void CompressBlock(object i)
+        {
+            using (MemoryStream output = new MemoryStream(dataArray[(int)i].Length))
+            {
+                using (GZipStream cs = new GZipStream(output, CompressionMode.Compress))
+                {
+                    cs.Write(dataArray[(int)i], 0, dataArray[(int)i].Length);
+                }
+                compressedDataArray[(int)i] = output.ToArray();
+            }
+        }
+
+        private void DecompressBlock(object i)
+        {
+            using (MemoryStream input = new MemoryStream(compressedDataArray[(int)i].Length))
+            {
+
+                using (GZipStream ds = new GZipStream(input, CompressionMode.Decompress))
+                {
+                    ds.Read(dataArray[(int)i], 0, dataArray[(int)i].Length);
+                }
+
+            }
         }
 
         private void ExtractFile(FileStream sourceStream,FileStream destinationStream)
         {
+            Thread[] pool;
+            int dataBlockSize = 0;
             using (GZipStream decompressionStream = new GZipStream(sourceStream, CompressionMode.Decompress))
             {
-                decompressionStream.CopyTo(destinationStream);
-                Console.WriteLine("Восстановлен файл: {0}", destinationFile);
+                              
+                while (decompressionStream.BaseStream.Position < decompressionStream.BaseStream.Length)
+                {
+                    pool = new Thread[threadNumber];
+                    for (int i = 0; i < threadNumber && decompressionStream.BaseStream.Position < decompressionStream.BaseStream.Length; i++)
+                    {
+                        dataArray[i] = new byte[blockSize];
+                        decompressionStream.Read(dataArray[i], 0, blockSize);
+
+                        pool[i] = new Thread(() =>
+                          {
+                              lock (locker)
+                              {
+
+                              destinationStream.Write(dataArray[i], 0, blockSize);
+                              }
+
+                          });
+                        pool[i].Start();
+                        Console.WriteLine(pool[i].ManagedThreadId);
+                        pool[i].Join();
+                    }
+                }
             }
             
         }
+
+
+
+
 
 
     }
