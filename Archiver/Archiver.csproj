@@ -43,7 +43,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AbstractArchiver.cs" />
+    <Compile Include="BlockingCollection.cs" />
+    <Compile Include="Compress.cs" />
+    <Compile Include="Decompress.cs" />
     <Compile Include="GZipFileManager.cs" />
+    <Compile Include="MethodProcess.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

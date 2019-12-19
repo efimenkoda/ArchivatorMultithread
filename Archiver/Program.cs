@@ -4,6 +4,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Archiver
@@ -13,34 +14,40 @@ namespace Archiver
 
         static void Main(string[] args)
         {
-
-            //string args0 = "compress";
-            //string args1 = @"lesson.MP4";
-            //string args2 = @"lesson.gz";
-
-            //args0 = "decompress";
-            //args1 = @"d:\TEMP\office.gz";
-            //args2 = @"d:\TEMP\officeNew.iso";
-
-
+            AbstractArchiver archiver;
+            
             string args0 = "compress";
-            string args1 = @"d:\TEMP\office.iso";
-            string args2 = @"d:\TEMP\office.gz";
+            string args1 = @"d:\TEMP\1.doc";
+            string args2 = @"d:\TEMP\1.doc.gz";
+            //archiver = new Compress(args1, args2);
 
             args0 = "decompress";
-            args1 = @"d:\TEMP\office.gz";
-            args2 = @"d:\TEMP\officeNew.iso";
+            args1 = @"d:\TEMP\1.doc.gz";
+            args2 = @"d:\TEMP\2.doc";
+            archiver = new Decompress(args1, args2);
 
-            //string args0 = @"compress";
-            //string args1 = @"d:\TEMP\DatabaseVyrabotka.mdf";
-            //string args2 = @"d:\TEMP\DatabaseVyrabotka.gz";
-            GZipFileManager gZipFile = new GZipFileManager(args0, args1, args2);
+            //string args0 = "compress";
+            //string args1 = @"d:\TEMP\office.iso";
+            //string args2 = @"d:\TEMP\office.iso.gz";
 
             //args0 = "decompress";
-            //args1 = @"d:\TEMP\DatabaseVyrabotka.gz";
-            //args2 = @"d:\TEMP\DatabaseVyrabotkaNew.mdf";
-            //gZipFile = new GZipFileManager(args0, args1, args2);
+            //args1 = @"d:\TEMP\office.iso.gz";
+            //args2 = @"d:\TEMP\officeNew.iso";
 
+            //string args0 = @"compress";
+            //string args1 = @"d:\TEMP\1C_8.2_Education.iso";
+            //string args2 = @"d:\TEMP\1C_8.2_Education.iso.gz";
+
+            //args0 = "decompress";
+            //args1 = @"d:\TEMP\1C_8.2_Education.gz";
+            //args2 = @"d:\TEMP\1C_8.2_EducationNew.iso";
+
+            //GZipFileManager gZipFile = new GZipFileManager(args0, args1, args2);
+
+
+            archiver.GetProccess();
+
+            Console.WriteLine("Main {0}", Thread.CurrentThread.ManagedThreadId);
             Console.ReadLine();
         }
     }
