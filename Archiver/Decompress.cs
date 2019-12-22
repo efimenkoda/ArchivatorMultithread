@@ -16,46 +16,40 @@ namespace Archiver
 
         protected override void ReadFromFile()
         {
-            int blockLength = 0;            
+
+            Console.WriteLine("Decompress...");
             using (FileStream sourceStream = new FileStream(InputFile, FileMode.Open, FileAccess.Read))
             {
-                Console.WriteLine("Decompress...");
+                using (var binaryReader = new BinaryReader(sourceStream))
                 {
-                    for (int i = 0; sourceStream.Position < sourceStream.Length; i++)
+                    FileInfo file = new FileInfo(InputFile);
+                    var sizeFileInput = file.Length;
                     {
-                        if (sourceStream.Length - sourceStream.Position > blockSize)
+                        for (int i = 0; sizeFileInput > 0; i++)
                         {
-                            blockLength = blockSize;
+                            int sizeCompressBlock = binaryReader.ReadInt32();
+                            byte[] buffer = binaryReader.ReadBytes(sizeCompressBlock);
+                            CompressDataBlocksDictionary.TryAdd(i, buffer);
+                            sizeFileInput =sizeFileInput-(sizeCompressBlock+4);
+                            Console.WriteLine("ReadFile {0}", Thread.CurrentThread.ManagedThreadId);
+
                         }
-                        else
-                        {
-                            blockLength = (int)(sourceStream.Length - sourceStream.Position);
-                        }
-                        byte[] buffer = new byte[blockLength];
-                        sourceStream.Read(buffer, 0, blockLength);
-                        DataBlocksDictionary.Add(i, buffer);
-                        Console.WriteLine("ReadFile {0}", Thread.CurrentThread.ManagedThreadId);
                     }
                 }
             }
-        
+
         }
 
-        protected override void BlockOperation()
+        protected override void BlockProcessing(/*int indexThread*/)
         {
-            //foreach (KeyValuePair<int, byte[]> keyValue in inputDictionary)
-            //{                
-            //    var outputDecompress = MethodProcess.Decompress(keyValue.Value);
-            //    inputDictionary.Add(keyValue.Key, outputDecompress);                
-            //    Console.WriteLine("DecompressBlock {0}", Thread.CurrentThread.ManagedThreadId);
-            //}
 
-            for (int i = 0; i < DataBlocksDictionary.Keys.Count; i++)
+            for (int i = 0; i < CompressDataBlocksDictionary.Keys.Count; i++)
             {
-                var outCompress = MethodProcess.Decompress(DataBlocksDictionary[i]);
-                DataBlocksDictionary[i] = outCompress;
+                var outCompress = MethodProcess.Decompress(CompressDataBlocksDictionary[i]);
+                CompressDataBlocksDictionary[i] = outCompress;
                 Console.WriteLine("DecompressBlock {0}", Thread.CurrentThread.ManagedThreadId);
             }
+            //blockProcces[indexThread].Set();
         }
 
         protected override void WriteToFile()
@@ -63,7 +57,7 @@ namespace Archiver
             Console.WriteLine("WriteToFile...");
             using (FileStream destinationStream = File.Create(OutputFile))
             {
-                foreach (KeyValuePair<int, byte[]> keyValue in DataBlocksDictionary)
+                foreach (KeyValuePair<int, byte[]> keyValue in CompressDataBlocksDictionary)
                 {
                     destinationStream.Write(keyValue.Value, 0, keyValue.Value.Length);
 

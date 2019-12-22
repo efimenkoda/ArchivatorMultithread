@@ -15,64 +15,65 @@ namespace Archiver
 
         }
 
-
-
         protected override void ReadFromFile()
         {
-            int blockLength = 0;
             Console.WriteLine("Compress...");
-            using (FileStream sourceStream = new FileStream(InputFile, FileMode.Open,FileAccess.Read))
+            using (FileStream sourceStream = new FileStream(InputFile, FileMode.Open, FileAccess.Read))
             {
-                
+                int blockLength = 0;
+                for (int i = 0; sourceStream.Position < sourceStream.Length; i++)
                 {
-                    for (int i = 0; sourceStream.Position < sourceStream.Length; i++)
-
+                    if (sourceStream.Length - sourceStream.Position > blockSize)
                     {
-
-                        if (sourceStream.Length - sourceStream.Position > blockSize)
-                        {
-                            blockLength = blockSize;
-                        }
-                        else
-                        {
-                            blockLength = (int)(sourceStream.Length - sourceStream.Position);
-                        }
-                        byte[] buffer = new byte[blockLength];
-                        sourceStream.Read(buffer, 0, blockLength);
-                        DataBlocksDictionary.Add(i, buffer);
-                        Console.WriteLine("ReadFile {0}", Thread.CurrentThread.ManagedThreadId);
+                        blockLength = blockSize;
                     }
+                    else
+                    {
+                        blockLength = (int)(sourceStream.Length - sourceStream.Position);
+                    }
+                    byte[] buffer = new byte[blockLength];
+
+                    sourceStream.Read(buffer, 0, blockLength);
+                    CompressDataBlocksDictionary.TryAdd(i, buffer);
+                    //CompressDataBlocksDictionary.Add(new BlockingCollection(i, buffer));
+                    Console.WriteLine("ReadFile {0}", Thread.CurrentThread.ManagedThreadId);
                 }
+
             }
-            
+
         }
 
-        protected override void BlockOperation()
+        protected override void BlockProcessing(/*int indexThread*/)
         {
-            for (int i = 0; i < DataBlocksDictionary.Keys.Count; i++)
-            {
-                var outCompress = MethodProcess.Compress(DataBlocksDictionary[i]);
-                DataBlocksDictionary[i] = outCompress;
-                Console.WriteLine("CompressBlock {0}", Thread.CurrentThread.ManagedThreadId);
-            }
-            //foreach (KeyValuePair<int, byte[]> keyValue in inputDictionary)
+            //for (int i = 0; i < CompressDataBlocksDictionary.Keys.Count; i++)
             //{
-                
-            //    var outCompress = MethodProcess.Compress(keyValue.Value);
-            //    outputDictionary.Add(keyValue.Key, outCompress);                
+            //    var outCompress = MethodProcess.Compress(CompressDataBlocksDictionary[i]);
+            //    CompressDataBlocksDictionary[i] = outCompress;
             //    Console.WriteLine("CompressBlock {0}", Thread.CurrentThread.ManagedThreadId);
             //}
+
+            for (int i = 0; i < CompressDataBlocksDictionary.Keys.Count; i++)
+            {
+                var outCompress = MethodProcess.Compress(CompressDataBlocksDictionary[i]);
+                CompressDataBlocksDictionary[i] = outCompress;
+                Console.WriteLine("CompressBlock {0}", Thread.CurrentThread.ManagedThreadId);
+            }
+            //blockProcces[indexThread].Set();
         }
 
         protected override void WriteToFile()
         {
             Console.WriteLine("WriteToFile...");
-            using (FileStream destinationStream = File.Create(OutputFile))
+            using (FileStream destinationStream = File.Create(OutputFile + ".gz"))
             {
-                foreach (KeyValuePair<int, byte[]> keyValue in DataBlocksDictionary)
+                using (BinaryWriter binaryWriter = new BinaryWriter(destinationStream))
                 {
-                    destinationStream.Write(keyValue.Value, 0, keyValue.Value.Length);
+                    foreach (KeyValuePair<int, byte[]> keyValue in CompressDataBlocksDictionary)
+                    {
+                        binaryWriter.Write(keyValue.Value.Length);
+                        binaryWriter.Write(keyValue.Value, 0, keyValue.Value.Length);
 
+                    }
                 }
             }
             Console.WriteLine("WriteFile {0}", Thread.CurrentThread.ManagedThreadId);

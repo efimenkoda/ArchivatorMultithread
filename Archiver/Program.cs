@@ -15,37 +15,40 @@ namespace Archiver
         static void Main(string[] args)
         {
             AbstractArchiver archiver;
-            
+
             string args0 = "compress";
             string args1 = @"d:\TEMP\1.doc";
-            string args2 = @"d:\TEMP\1.doc.gz";
-            //archiver = new Compress(args1, args2);
-
-            args0 = "decompress";
-            args1 = @"d:\TEMP\1.doc.gz";
-            args2 = @"d:\TEMP\2.doc";
-            archiver = new Decompress(args1, args2);
-
-            //string args0 = "compress";
-            //string args1 = @"d:\TEMP\office.iso";
-            //string args2 = @"d:\TEMP\office.iso.gz";
+            string args2 = @"d:\TEMP\1.doc";
 
             //args0 = "decompress";
-            //args1 = @"d:\TEMP\office.iso.gz";
-            //args2 = @"d:\TEMP\officeNew.iso";
+            //args1 = @"d:\TEMP\1.doc.gz";
+            //args2 = @"d:\TEMP\2.doc";
 
-            //string args0 = @"compress";
-            //string args1 = @"d:\TEMP\1C_8.2_Education.iso";
-            //string args2 = @"d:\TEMP\1C_8.2_Education.iso.gz";
+
+
+            args0 = "compress";
+            args1 = @"d:\TEMP\office.iso";
+            args2 = @"d:\TEMP\office.iso";
+
+            args0 = "decompress";
+            args1 = @"d:\TEMP\office.iso.gz";
+            args2 = @"d:\TEMP\officeNew.iso";
+
+            //args0 = @"compress";
+            //args1 = @"d:\TEMP\1C_8.2_Education.iso";
+            //args2 = @"d:\TEMP\1C_8.2_Education.iso.gz";
 
             //args0 = "decompress";
             //args1 = @"d:\TEMP\1C_8.2_Education.gz";
             //args2 = @"d:\TEMP\1C_8.2_EducationNew.iso";
 
-            //GZipFileManager gZipFile = new GZipFileManager(args0, args1, args2);
 
+            //archiver = new Compress(args1, args2);
+            //archiver.GetProccess();
 
+            archiver = new Decompress(args1, args2);
             archiver.GetProccess();
+
 
             Console.WriteLine("Main {0}", Thread.CurrentThread.ManagedThreadId);
             Console.ReadLine();

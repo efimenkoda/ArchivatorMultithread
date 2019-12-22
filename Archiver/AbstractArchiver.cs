@@ -10,19 +10,17 @@ namespace Archiver
 {
     public abstract class AbstractArchiver
     {
-        protected static int threadNumber = Environment.ProcessorCount;
+        //protected static int threadNumber = Environment.ProcessorCount;
         protected static int blockSize = 1024 * 1024;
-
         private static int countThread = Environment.ProcessorCount;
-
         private static object locker = new object();
         protected string InputFile { get; set; }
         protected string OutputFile { get; set; }
 
-        protected Dictionary<int, byte[]> DataBlocksDictionary = new Dictionary<int, byte[]>();
-        //protected Dictionary<int, byte[]> outputDictionary = new Dictionary<int, byte[]>();
+        //protected Dictionary<int, byte[]> CompressDataBlocksDictionary = new Dictionary<int, byte[]>();
+        protected ConcurrentDictionary<int, byte[]> CompressDataBlocksDictionary = new ConcurrentDictionary<int, byte[]>();
 
-        AutoResetEvent[] blockProcces = new AutoResetEvent[countThread];
+        protected AutoResetEvent[] blockProcces = new AutoResetEvent[countThread];
 
         public AbstractArchiver(string inputFile, string outputFile)
         {
@@ -31,27 +29,38 @@ namespace Archiver
         }
 
         protected abstract void ReadFromFile();
-        protected abstract void BlockOperation();
+        protected abstract void BlockProcessing(/*int indexThread*/);
         protected abstract void WriteToFile();
         public void GetProccess()
         {
-            //var threadRead = new Thread(ReadFromFile);
+            //Thread threadReadFile = new Thread(ReadFromFile);
             //List<Thread> threadCompressBlocks = new List<Thread>();
-            //for (int i = 0; i < countThread; i++)
+            //for (int i = 0; i < 2 /*countThread*/; i++)
             //{
             //    int j = i;
             //    blockProcces[j] = new AutoResetEvent(false);
-            //    threadCompressBlocks.Add(new Thread(()=> { }));
+            //    threadCompressBlocks.Add(new Thread(()=> 
+            //    { 
+            //        BlockProcessing(i);
+            //        Console.WriteLine(Thread.CurrentThread.ManagedThreadId);
+            //    }));
+                
+            //}            
+            //threadReadFile.Start();
+            //foreach (var threadProcessBlock in threadCompressBlocks)
+            //{
+            //    threadProcessBlock.Start();
             //}
-            //var threadWrite = new Thread(WriteToFile);
+            //Thread threadWriteFile = new Thread(WriteToFile);
+            //threadWriteFile.Start();
+            //WaitHandle.WaitAll(blockProcces);
+            //threadWriteFile.Join();
+
+
             ReadFromFile();
-            BlockOperation();
+            BlockProcessing();
             WriteToFile();
-
-
-
-
-
+            
         }
 
     }
