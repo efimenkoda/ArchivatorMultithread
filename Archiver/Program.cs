@@ -5,7 +5,6 @@ using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Archiver
 {
@@ -14,41 +13,20 @@ namespace Archiver
 
         static void Main(string[] args)
         {
-            AbstractArchiver archiver;
+            
 
-            string args0 = "compress";
-            string args1 = @"d:\TEMP\1.doc";
-            string args2 = @"d:\TEMP\1.doc";
+            //compress d:\TEMP\1.doc d:\TEMP\1.doc
+            //decompress d:\TEMP\1.doc.gz d:\TEMP\1New.doc
 
-            //args0 = "decompress";
-            //args1 = @"d:\TEMP\1.doc.gz";
-            //args2 = @"d:\TEMP\2.doc";
+            //compress d:\TEMP\office.iso d:\TEMP\office.iso
+            //decompress d:\TEMP\office.iso.gz d:\TEMP\officeNew.iso
 
-
-
-            args0 = "compress";
-            args1 = @"d:\TEMP\office.iso";
-            args2 = @"d:\TEMP\office.iso";
-
-            args0 = "decompress";
-            args1 = @"d:\TEMP\office.iso.gz";
-            args2 = @"d:\TEMP\officeNew.iso";
-
-            //args0 = @"compress";
-            //args1 = @"d:\TEMP\1C_8.2_Education.iso";
-            //args2 = @"d:\TEMP\1C_8.2_Education.iso.gz";
-
-            //args0 = "decompress";
-            //args1 = @"d:\TEMP\1C_8.2_Education.gz";
-            //args2 = @"d:\TEMP\1C_8.2_EducationNew.iso";
+            //compress d:\TEMP\1C_8.2_Education.iso d:\TEMP\1C_8.2_Education.iso
+            //decompress d:\TEMP\1C_8.2_Education.iso.gz d:\TEMP\1C_8.2_EducationNew.iso
 
 
-            //archiver = new Compress(args1, args2);
-            //archiver.GetProccess();
-
-            archiver = new Decompress(args1, args2);
-            archiver.GetProccess();
-
+            ArchiverManager manager = new ArchiverManager(args);
+            manager.Start();
 
             Console.WriteLine("Main {0}", Thread.CurrentThread.ManagedThreadId);
             Console.ReadLine();

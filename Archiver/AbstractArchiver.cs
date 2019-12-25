@@ -1,66 +1,67 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Archiver
 {
     public abstract class AbstractArchiver
     {
-        //protected static int threadNumber = Environment.ProcessorCount;
         protected static int blockSize = 1024 * 1024;
-        private static int countThread = Environment.ProcessorCount;
-        private static object locker = new object();
+        protected static int countThreads = Environment.ProcessorCount;
+        protected static object locker = new object();
         protected string InputFile { get; set; }
         protected string OutputFile { get; set; }
+        protected ConcurrentDictionary<int, byte[]> compressDataBlocksDictionary;
+        //protected ProducerConsumer compressDataBlocksDictionary;
+        protected BlockingCollection<Blocks> readDataBlocks;
+        //protected BlockingCollection<Blocks> writeDataBlocks = new BlockingCollection<Blocks>();
 
-        //protected Dictionary<int, byte[]> CompressDataBlocksDictionary = new Dictionary<int, byte[]>();
-        protected ConcurrentDictionary<int, byte[]> CompressDataBlocksDictionary = new ConcurrentDictionary<int, byte[]>();
-
-        protected AutoResetEvent[] blockProcces = new AutoResetEvent[countThread];
-
+        //protected Queue<BlockingCollection> CompressDataBlocksDictionary = new System.Collections.Generic.Queue<BlockingCollection>();
+        protected AutoResetEvent[] eventCountActiveProcess = new AutoResetEvent[countThreads];
+        protected static AutoResetEvent eventReading = new AutoResetEvent(false);
+        protected static AutoResetEvent eventWriting = new AutoResetEvent(false);
         public AbstractArchiver(string inputFile, string outputFile)
         {
             InputFile = inputFile;
             OutputFile = outputFile;
-        }
-
+            FileInfo fileSize = new FileInfo(inputFile);
+            var capasity = ((fileSize.Length) / blockSize)+1;
+            compressDataBlocksDictionary = new ConcurrentDictionary<int, byte[]>(countThreads, (int)capasity);
+             readDataBlocks = new BlockingCollection<Blocks>((int)capasity);
+        //compressDataBlocksDictionary = new ProducerConsumer();
+    }
         protected abstract void ReadFromFile();
-        protected abstract void BlockProcessing(/*int indexThread*/);
+        protected abstract void BlockProcessing(int threadsNumber);
         protected abstract void WriteToFile();
         public void GetProccess()
         {
-            //Thread threadReadFile = new Thread(ReadFromFile);
-            //List<Thread> threadCompressBlocks = new List<Thread>();
-            //for (int i = 0; i < 2 /*countThread*/; i++)
-            //{
-            //    int j = i;
-            //    blockProcces[j] = new AutoResetEvent(false);
-            //    threadCompressBlocks.Add(new Thread(()=> 
-            //    { 
-            //        BlockProcessing(i);
-            //        Console.WriteLine(Thread.CurrentThread.ManagedThreadId);
-            //    }));
-                
-            //}            
-            //threadReadFile.Start();
-            //foreach (var threadProcessBlock in threadCompressBlocks)
-            //{
-            //    threadProcessBlock.Start();
-            //}
-            //Thread threadWriteFile = new Thread(WriteToFile);
-            //threadWriteFile.Start();
-            //WaitHandle.WaitAll(blockProcces);
-            //threadWriteFile.Join();
+            GC.AddMemoryPressure(InputFile.Length);      
+            Thread threadReadFile = new Thread(ReadFromFile);
+            threadReadFile.Start();
+            threadReadFile.Join(3000);
+            List<Thread> threadCompressBlocks = new List<Thread>();
+            Thread threadWriteFile = new Thread(WriteToFile);
 
+            for (int i = 0; i < countThreads; i++)
+            {
+                int j = i;
+                eventCountActiveProcess[j] = new AutoResetEvent(false);           
+                threadCompressBlocks.Add(new Thread(() => BlockProcessing(j)));
+            }
 
-            ReadFromFile();
-            BlockProcessing();
-            WriteToFile();
+            foreach (var threads in threadCompressBlocks)
+            {
+                threads.Start();
+            }            
             
+            WaitHandle.WaitAll(eventCountActiveProcess);
+            threadWriteFile.Start();
+            threadWriteFile.Join();
+
         }
 
     }
