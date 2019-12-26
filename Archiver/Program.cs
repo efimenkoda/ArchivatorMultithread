@@ -28,7 +28,6 @@ namespace Archiver
             ArchiverManager manager = new ArchiverManager(args);
             manager.Start();
 
-            Console.WriteLine("Main {0}", Thread.CurrentThread.ManagedThreadId);
             Console.ReadLine();
         }
     }

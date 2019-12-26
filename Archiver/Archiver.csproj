@@ -51,7 +51,6 @@
     <Compile Include="Blocks.cs" />
     <Compile Include="Compress.cs" />
     <Compile Include="Decompress.cs" />
-    <Compile Include="MethodProcess.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

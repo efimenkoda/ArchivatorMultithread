@@ -54,24 +54,31 @@ namespace Archiver
 
         public void Start()
         {
-            //try
+            try
             {
                 if (isInitializationParametrs())
                 {
                     AbstractArchiver abstractArchiver;
                     if (processArchiver.Equals("compress"))
                     {
+                        Console.WriteLine("Compressing...");
                         abstractArchiver = new Compress(inputFile, outputFile);
                     }
                     else
                     {
+                        Console.WriteLine("Decompressing...");
                         abstractArchiver = new Decompress(inputFile, outputFile);
                     }
                     abstractArchiver.GetProccess();
                 }
+                else
+                {
+                    Console.WriteLine(1);
+                    return;
+                }
                 Console.WriteLine(0);
             }
-            //catch
+            catch(Exception e)
             {
                 Console.WriteLine(1);
             }
