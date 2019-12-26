@@ -14,51 +14,97 @@ namespace Archiver
         public Compress(string inputFile, string outputFile) : base(inputFile, outputFile)
         {
         }
+
+
         protected override void ReadFromFile()
         {
             Console.WriteLine("Compress...");
+            //using (FileStream sourceStream = new FileStream(InputFile, FileMode.Open, FileAccess.Read))
+            //{
+            //    int blockLength = 0;
+            //    for (int i = 0; sourceStream.Position < sourceStream.Length; i++)
+            //    {
+            //        if (sourceStream.Length - sourceStream.Position > blockSize)
+            //        {
+            //            blockLength = blockSize;
+            //        }
+            //        else
+            //        {
+            //            blockLength = (int)(sourceStream.Length - sourceStream.Position);
+            //        }
+            //        byte[] buffer = new byte[blockLength];
+            //        sourceStream.Read(buffer, 0, blockLength);
+            //        readDataBlocks.TryAdd(new Blocks(i, buffer));
+
+            //        Console.WriteLine("Чтение блока {0}, Процесс {1} ", i, Thread.CurrentThread.ManagedThreadId);
+            //    }
+
+            //    if (sourceStream.Position == sourceStream.Length)
+            //    {
+            //        readDataBlocks.CompleteAdding();                    
+
+            //    }
+
+            //}
+
             using (FileStream sourceStream = new FileStream(InputFile, FileMode.Open, FileAccess.Read))
             {
-                int blockLength = 0;
-                for (int i = 0; sourceStream.Position < sourceStream.Length; i++)
+                using (FileStream destinationStream = File.Create(OutputFile + ".gz"))
                 {
-                    if (sourceStream.Length - sourceStream.Position > blockSize)
+                    using (BinaryWriter binaryWriter = new BinaryWriter(destinationStream))
                     {
-                        blockLength = blockSize;
-                    }
-                    else
-                    {
-                        blockLength = (int)(sourceStream.Length - sourceStream.Position);
-                    }
-                    byte[] buffer = new byte[blockLength];
-                    sourceStream.Read(buffer, 0, blockLength);
-                    readDataBlocks.TryAdd(new Blocks(i, buffer));
-                    Console.WriteLine("Чтение блока {0}, Процесс {1} ", i, Thread.CurrentThread.ManagedThreadId);
+                        while (sourceStream.Position < sourceStream.Length)
+                        {
+                            Thread[] threadCompress = new Thread[countThreads];
+                            int blockLength = 0;
+                            compressDataBlocksDictionary.Clear();
+                            readDataBlocks.Clear();
+                            for (int i = 0; i < countThreads && sourceStream.Position < sourceStream.Length; i++)
+                            {
+                                if (sourceStream.Length - sourceStream.Position > blockSize)
+                                {
+                                    blockLength = blockSize;
+                                }
+                                else
+                                {
+                                    blockLength = (int)(sourceStream.Length - sourceStream.Position);
+                                }
+                                Console.WriteLine("Чтение блока {0}, Процесс {1} ", i, Thread.CurrentThread.ManagedThreadId);
+                                byte[] buffer = new byte[blockLength];
+                                sourceStream.Read(buffer, 0, blockLength);
+                                readDataBlocks.Add(i, buffer);
+                                
+                                int j = i;
+                                eventCountActiveProcess[j] = new AutoResetEvent(false);
+                                threadCompress[j] = new Thread(() => BlockProcessing(j));
+                                threadCompress[j].Start();
+                            }
 
-                }
-                
-                if (sourceStream.Position == sourceStream.Length)
-                {
-                    readDataBlocks.CompleteAdding();                    
+
+                            //WaitHandle.WaitAll(eventCountActiveProcess);
+                            for (int i = 0; i < countThreads && (threadCompress[i] != null); i++)
+                            {
+                                threadCompress[i].Join();
+                                Console.WriteLine("Запись блока {0}, Процесс {1} ", i, Thread.CurrentThread.ManagedThreadId);
+                                binaryWriter.Write(compressDataBlocksDictionary[i].Length);
+                                binaryWriter.Write(compressDataBlocksDictionary[i], 0, compressDataBlocksDictionary[i].Length);
+                            }
+                        }
+
+                    }
 
                 }
 
             }
-            
         }
-        protected override void BlockProcessing(int threadNumber)
-        {  
 
-            while(readDataBlocks.TryTake(out Blocks block))
-            {                
-                //readDataBlocks.TryTake(out Blocks block);
-                var outCompress = CompressBlock(block.byteBlock);
-                compressDataBlocksDictionary.TryAdd(block.Id, outCompress);
-               
-                //writeDataBlocks.Add(new Blocks(block.Id, outCompress));
-                Console.WriteLine("Обработка блока {0}, Процесс {1} ",block.Id,Thread.CurrentThread.ManagedThreadId);
-            }
-            eventCountActiveProcess[threadNumber].Set();
+
+        protected override void BlockProcessing(int threadNumber)
+        {
+                Console.WriteLine("Обработка блока {0}, Процесс {1} ", threadNumber, Thread.CurrentThread.ManagedThreadId);
+                var outCompress = CompressBlock(readDataBlocks[threadNumber]);
+                compressDataBlocksDictionary[threadNumber]=outCompress;
+                eventCountActiveProcess[threadNumber].Set();
         }
 
 
@@ -73,30 +119,28 @@ namespace Archiver
                     return outputStream.ToArray();
                 }
         }
-
+        
         protected override void WriteToFile()
         {
-            Console.WriteLine("WriteToFile..."); 
-            using (FileStream destinationStream = File.Create(OutputFile+".gz"))
-            {
-                using (BinaryWriter binaryWriter = new BinaryWriter(destinationStream))
-                {
+            //Console.WriteLine("WriteToFile...");
+            //using (FileStream destinationStream = File.Create(OutputFile+".gz"))
+            //{
+            //    using (BinaryWriter binaryWriter = new BinaryWriter(destinationStream))
+            //    {
+            //        for (int i = 0; i < compressDataBlocksDictionary.Keys.Count(); i++)
+            //        {
+            //            while (compressDataBlocksDictionary.TryGetValue(i, out byte[] data))
+            //            {
+            //                binaryWriter.Write(data.Length);
+            //                binaryWriter.Write(data, 0, data.Length);
+            //                Console.WriteLine("Запись блока {0}, Процесс {1} ", i, Thread.CurrentThread.ManagedThreadId);
+            //            }
+            //        }
 
-                    var count = compressDataBlocksDictionary.Keys.Count();
-                    for (int i = 0; i < count; i++)
-                    {
-                        while (compressDataBlocksDictionary.TryRemove(i, out byte[] data))
-                        {
-                            binaryWriter.Write(data.Length);
-                            binaryWriter.Write(data, 0, data.Length);
-                            Console.WriteLine("Запись блока {0}, Процесс {1} ", i, Thread.CurrentThread.ManagedThreadId);
-                        }
-                    }
                     
-                }
-            }
+            //    }
+            //}
             
-            //Console.WriteLine("WriteFile {0}", Thread.CurrentThread.ManagedThreadId);
         }
     }
 }
