@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace Archiver
 {
@@ -38,14 +35,14 @@ namespace Archiver
             inputFile = args[1];
             if (inputFile.Length == 0 || !File.Exists(inputFile))
             {
-                Console.WriteLine("Путь входного файла введен некорректно или файла не существует");
+                Console.WriteLine("Расположение входного файла введено некорректно или файла не существует");
                 return false;
             }
 
             outputFile = args[2];
             if (inputFile.Length == 0 || File.Exists(outputFile+".gz"))
             {
-                Console.WriteLine("Путь выходного файла не введен или такой файл уже существует");
+                Console.WriteLine("Расположение выходного файла не введено или такой файл уже существует");
                 return false;
             }            
 
@@ -78,7 +75,7 @@ namespace Archiver
                 }
                 Console.WriteLine(0);
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 Console.WriteLine(1);
             }

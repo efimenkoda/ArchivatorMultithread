@@ -18,12 +18,12 @@ namespace Archiver
         protected override void StartReadFile()
         {
             try
-            {                
+            {
                 TryStartReadFile();
             }
-            catch(Exception e)
+            catch (Exception e)
             {
-                Console.WriteLine("Ошибка извлечения файла {0}: {1}", (new FileInfo(InputFile)).Name ,e.Message);
+                Console.WriteLine("Ошибка извлечения файла {0}: {1}", (new FileInfo(InputFile)).Name, e.Message);
                 throw new Exception();
             }
         }
@@ -40,24 +40,20 @@ namespace Archiver
                         var sizeFileInput = file.Length;
                         while (sourceStream.Position < sourceStream.Length)
                         {
-                            compressDataBlocksDictionary.Clear();
-                            readDataBlocks.Clear();
+                            processingDataBlocks.Clear();
                             Thread[] threadCompress = new Thread[countThreads];
                             for (int i = 0; i < countThreads && sizeFileInput > 0; i++)
                             {
                                 int sizeCompressBlock = binaryReader.ReadInt32();
                                 byte[] buffer = binaryReader.ReadBytes(sizeCompressBlock);
-                                readDataBlocks.Add(i, buffer);
+                                processingDataBlocks.TryAdd(i, buffer);
                                 sizeFileInput = sizeFileInput - (sizeCompressBlock + 4);
                                 int j = i;
                                 threadCompress[j] = new Thread(() => BlockProcessing(j));
                                 threadCompress[j].Start();
                             }
-                            for (int i = 0; i < countThreads && (threadCompress[i] != null); i++)
-                            {
-                                threadCompress[i].Join();
-                                destinationStream.Write(compressDataBlocksDictionary[i], 0, compressDataBlocksDictionary[i].Length);
-                            }
+
+                            WriteToFile(destinationStream, threadCompress);
                         }
 
                     }
@@ -65,17 +61,18 @@ namespace Archiver
             }
         }
 
-        protected override void BlockProcessing(int threadsNumber)
+
+
+        protected override void BlockProcessing(int threadNumber)
         {
             try
             {
-                lock (locker)
-                {
-                    var outDecompress = DecompressBlock(readDataBlocks[threadsNumber]);
-                    compressDataBlocksDictionary[threadsNumber] = outDecompress;
-                }
+                processingDataBlocks.TryGetValue(threadNumber, out byte[] data);
+                var outCompress = DecompressBlock(data);
+                processingDataBlocks[threadNumber] = outCompress;
+
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 Console.WriteLine("Ошибка распаковки блока данных: {0}", e.Message);
             }
@@ -101,5 +98,16 @@ namespace Archiver
                 }
             }
         }
+
+        private void WriteToFile(FileStream destinationStream, Thread[] threadCompress)
+        {
+            for (int i = 0; i < countThreads; i++)
+            {
+                threadCompress[i].Join();
+                processingDataBlocks.TryGetValue(i, out byte[] block);
+                destinationStream.Write(block, 0, block.Length);
+            }
+        }
+
     }
 }

@@ -11,23 +11,24 @@ namespace Archiver
     public abstract class AbstractArchiver
     {
         protected static int blockSize = 1024 * 1024;
-        protected static int countThreads = Environment.ProcessorCount;
-        protected static object locker = new object();
+        protected static int countThreads =  Environment.ProcessorCount;
         protected string InputFile { get; set; }
         protected string OutputFile { get; set; }
-        protected Dictionary<int, byte[]> compressDataBlocksDictionary= new Dictionary<int, byte[]>();
-        protected Dictionary<int,byte[]> readDataBlocks= new Dictionary<int, byte[]>();        
+        protected ConcurrentDictionary<int,byte[]> processingDataBlocks = new ConcurrentDictionary<int,byte[]>();
         public AbstractArchiver(string inputFile, string outputFile)
         {
             InputFile = inputFile;
             OutputFile = outputFile;
     }
         protected abstract void StartReadFile();
+
         protected abstract void BlockProcessing(int threadsNumber);
-        //protected abstract void WriteToFile();
         public void GetProccess()
-        {         
-           StartReadFile();            
+        {
+            StartReadFile();
+   
+
+            
         }
 
     }

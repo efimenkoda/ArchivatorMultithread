@@ -13,20 +13,20 @@ namespace Archiver
     {
         public Compress(string inputFile, string outputFile) : base(inputFile, outputFile)
         {
-        }        
+        }
 
         protected override void StartReadFile()
         {
             try
             {
                 TryStartReadFile();
-                
+
             }
             catch (Exception e)
             {
                 Console.WriteLine("Ошибка сжатия файла {0}: {1}", (new FileInfo(InputFile)).Name, e.Message);
-                throw new Exception();                        
-                
+                throw new Exception();
+
             }
         }
 
@@ -42,8 +42,7 @@ namespace Archiver
                         {
                             Thread[] threadCompress = new Thread[countThreads];
                             int blockLength = 0;
-                            compressDataBlocksDictionary.Clear();
-                            readDataBlocks.Clear();
+                            processingDataBlocks.Clear();
                             for (int i = 0; i < countThreads; i++)
                             {
                                 if (sourceStream.Length - sourceStream.Position > blockSize)
@@ -54,38 +53,32 @@ namespace Archiver
                                 {
                                     blockLength = (int)(sourceStream.Length - sourceStream.Position);
                                 }
+
                                 byte[] buffer = new byte[blockLength];
                                 sourceStream.Read(buffer, 0, blockLength);
-                                readDataBlocks.Add(i, buffer);
-
+                                processingDataBlocks.TryAdd(i, buffer);
                                 int j = i;
                                 threadCompress[j] = new Thread(() => BlockProcessing(j));
                                 threadCompress[j].Start();
                             }
 
-                            for (int i = 0; i < countThreads && (threadCompress[i] != null); i++)
-                            {
-                                threadCompress[i].Join();
-                                binaryWriter.Write(compressDataBlocksDictionary[i].Length);
-                                binaryWriter.Write(compressDataBlocksDictionary[i], 0, compressDataBlocksDictionary[i].Length);
-                            }
+                            WriteToFile(binaryWriter, threadCompress);
                         }
                     }
                 }
             }
         }
 
+
         protected override void BlockProcessing(int threadNumber)
         {
             try
             {
-                lock (locker)
-                {                    
-                    var outCompress = CompressBlock(readDataBlocks[threadNumber]);
-                    compressDataBlocksDictionary[threadNumber] = outCompress;
-                }
+                processingDataBlocks.TryGetValue(threadNumber, out byte[] data);
+                var outCompress = CompressBlock(data);
+                processingDataBlocks[threadNumber] = outCompress;
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 Console.WriteLine("Ошибка сжатия блока данных: {0}", e.Message);
             }
@@ -101,6 +94,20 @@ namespace Archiver
                 }
                 return outputStream.ToArray();
             }
+        }
+
+        private void WriteToFile(BinaryWriter binaryWriter, Thread[] threadCompress)
+        {
+
+            for (int i = 0; i < countThreads; i++)
+            {
+                threadCompress[i].Join();
+                processingDataBlocks.TryGetValue(i, out byte[] block);
+                binaryWriter.Write(block.Length);
+                binaryWriter.Write(block, 0, block.Length);
+            }
+
+
         }
     }
 }

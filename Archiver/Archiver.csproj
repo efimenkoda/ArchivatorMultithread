@@ -48,7 +48,6 @@
   <ItemGroup>
     <Compile Include="AbstractArchiver.cs" />
     <Compile Include="ArchiverManager.cs" />
-    <Compile Include="Blocks.cs" />
     <Compile Include="Compress.cs" />
     <Compile Include="Decompress.cs" />
     <Compile Include="Program.cs" />
