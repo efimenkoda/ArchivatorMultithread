@@ -53,10 +53,9 @@ namespace Archiver
                                 {
                                     blockLength = (int)(sourceStream.Length - sourceStream.Position);
                                 }
-
                                 byte[] buffer = new byte[blockLength];
                                 sourceStream.Read(buffer, 0, blockLength);
-                                processingDataBlocks.TryAdd(i, buffer);
+                                processingDataBlocks.Add(i, buffer);
                                 int j = i;
                                 threadCompress[j] = new Thread(() => BlockProcessing(j));
                                 threadCompress[j].Start();

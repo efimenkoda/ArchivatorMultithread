@@ -14,7 +14,8 @@ namespace Archiver
         protected static int countThreads =  Environment.ProcessorCount;
         protected string InputFile { get; set; }
         protected string OutputFile { get; set; }
-        protected ConcurrentDictionary<int,byte[]> processingDataBlocks = new ConcurrentDictionary<int,byte[]>();
+        protected Dictionary<int, byte[]> processingDataBlocks = new Dictionary<int, byte[]>();
+
         public AbstractArchiver(string inputFile, string outputFile)
         {
             InputFile = inputFile;
@@ -25,10 +26,7 @@ namespace Archiver
         protected abstract void BlockProcessing(int threadsNumber);
         public void GetProccess()
         {
-            StartReadFile();
-   
-
-            
+            StartReadFile();            
         }
 
     }

@@ -46,7 +46,7 @@ namespace Archiver
                             {
                                 int sizeCompressBlock = binaryReader.ReadInt32();
                                 byte[] buffer = binaryReader.ReadBytes(sizeCompressBlock);
-                                processingDataBlocks.TryAdd(i, buffer);
+                                processingDataBlocks.Add(i, buffer);
                                 sizeFileInput = sizeFileInput - (sizeCompressBlock + 4);
                                 int j = i;
                                 threadCompress[j] = new Thread(() => BlockProcessing(j));
@@ -70,7 +70,6 @@ namespace Archiver
                 processingDataBlocks.TryGetValue(threadNumber, out byte[] data);
                 var outCompress = DecompressBlock(data);
                 processingDataBlocks[threadNumber] = outCompress;
-
             }
             catch (Exception e)
             {
