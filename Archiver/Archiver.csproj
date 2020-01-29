@@ -48,10 +48,13 @@
   <ItemGroup>
     <Compile Include="AbstractArchiver.cs" />
     <Compile Include="ArchiverManager.cs" />
+    <Compile Include="Blocks.cs" />
     <Compile Include="Compress.cs" />
     <Compile Include="Decompress.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ReadCollection.cs" />
+    <Compile Include="WriteBlockingCollection.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

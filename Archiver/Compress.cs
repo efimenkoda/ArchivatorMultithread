@@ -34,37 +34,33 @@ namespace Archiver
         {
             using (FileStream sourceStream = new FileStream(InputFile, FileMode.Open, FileAccess.Read))
             {
-                using (FileStream destinationStream = File.Create(OutputFile + ".gz"))
+                int i = 0;
+                while (sourceStream.Position < sourceStream.Length)
                 {
-                    using (BinaryWriter binaryWriter = new BinaryWriter(destinationStream))
-                    {
-                        while (sourceStream.Position < sourceStream.Length)
-                        {
-                            Thread[] threadCompress = new Thread[countThreads];
-                            int blockLength = 0;
-                            processingDataBlocks.Clear();
-                            for (int i = 0; i < countThreads; i++)
-                            {
-                                if (sourceStream.Length - sourceStream.Position > blockSize)
-                                {
-                                    blockLength = blockSize;
-                                }
-                                else
-                                {
-                                    blockLength = (int)(sourceStream.Length - sourceStream.Position);
-                                }
-                                byte[] buffer = new byte[blockLength];
-                                sourceStream.Read(buffer, 0, blockLength);
-                                processingDataBlocks.Add(i, buffer);
-                                int j = i;
-                                threadCompress[j] = new Thread(() => BlockProcessing(j));
-                                threadCompress[j].Start();
-                            }
+                    int blockLength = 0;
 
-                            WriteToFile(binaryWriter, threadCompress);
-                        }
+                    if (sourceStream.Length - sourceStream.Position > blockSize)
+                    {
+                        blockLength = blockSize;
                     }
+                    else
+                    {
+                        blockLength = (int)(sourceStream.Length - sourceStream.Position);
+                    }
+                    byte[] buffer = new byte[blockLength];
+                    sourceStream.Read(buffer, 0, blockLength);
+                    processingDataBlocks.Add(new Blocks(i, buffer));
+                    //processingDataBlocks1.Enqueue(new Blocks(i, buffer));
+
+                    Console.WriteLine("Reading thead {0} block {1}", Thread.CurrentThread.ManagedThreadId, i++);
                 }
+                if (sourceStream.Position == sourceStream.Length)
+                {
+                    processingDataBlocks.CompleteAdding();
+
+                }
+                
+
             }
         }
 
@@ -73,9 +69,17 @@ namespace Archiver
         {
             try
             {
-                processingDataBlocks.TryGetValue(threadNumber, out byte[] data);
-                var outCompress = CompressBlock(data);
-                processingDataBlocks[threadNumber] = outCompress;
+                //while (processingDataBlocks1.TryDequeue(out Blocks data))
+                foreach (var data in processingDataBlocks.GetConsumingEnumerable())
+                {
+                    var outCompress = CompressBlock(data.Block);
+                    dataBlocksToWrite.Add(data.ID, outCompress);
+
+                    Console.WriteLine("Processing thead {0} block {1}", Thread.CurrentThread.ManagedThreadId, data.ID);
+                }
+
+                autoResetEvents[threadNumber].Set();
+
             }
             catch (Exception e)
             {
@@ -95,15 +99,29 @@ namespace Archiver
             }
         }
 
-        private void WriteToFile(BinaryWriter binaryWriter, Thread[] threadCompress)
-        {
 
-            for (int i = 0; i < countThreads; i++)
+
+        protected override void WriteToFile()
+        {
+            try
             {
-                threadCompress[i].Join();
-                processingDataBlocks.TryGetValue(i, out byte[] block);
-                binaryWriter.Write(block.Length);
-                binaryWriter.Write(block, 0, block.Length);
+                using (FileStream destinationStream = File.Create(OutputFile + ".gz"))
+                {
+                    using (BinaryWriter binaryWriter = new BinaryWriter(destinationStream))
+                    {
+                        int i = 0;
+                        while (dataBlocksToWrite.GetValue(out var data))
+                        {
+                            binaryWriter.Write(data.Length);
+                            binaryWriter.Write(data, 0, data.Length);
+                            Console.WriteLine("Writting thead {0} block {1}", Thread.CurrentThread.ManagedThreadId, i++);
+                        }
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Ошибка записи в файл: {0}", e.Message);
             }
 
 

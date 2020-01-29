@@ -79,7 +79,7 @@ namespace Archiver
             {
                 Console.WriteLine(1);
             }
-            
+
         }
     }
 }

@@ -34,29 +34,25 @@ namespace Archiver
             {
                 using (var binaryReader = new BinaryReader(sourceStream))
                 {
-                    using (FileStream destinationStream = File.Create(OutputFile))
+                    int i = 0;
+                    FileInfo file = new FileInfo(InputFile);
+                    var sizeFileInput = file.Length;
+                    while (sourceStream.Position < sourceStream.Length)
                     {
-                        FileInfo file = new FileInfo(InputFile);
-                        var sizeFileInput = file.Length;
-                        while (sourceStream.Position < sourceStream.Length)
-                        {
-                            processingDataBlocks.Clear();
-                            Thread[] threadCompress = new Thread[countThreads];
-                            for (int i = 0; i < countThreads && sizeFileInput > 0; i++)
-                            {
-                                int sizeCompressBlock = binaryReader.ReadInt32();
-                                byte[] buffer = binaryReader.ReadBytes(sizeCompressBlock);
-                                processingDataBlocks.Add(i, buffer);
-                                sizeFileInput = sizeFileInput - (sizeCompressBlock + 4);
-                                int j = i;
-                                threadCompress[j] = new Thread(() => BlockProcessing(j));
-                                threadCompress[j].Start();
-                            }
+                        int sizeCompressBlock = binaryReader.ReadInt32();
+                        byte[] buffer = binaryReader.ReadBytes(sizeCompressBlock);
+                        processingDataBlocks.Add(new Blocks(i, buffer));
+                        //processingDataBlocks1.Enqueue(new Blocks(i, buffer));
+                        sizeFileInput = sizeFileInput - (sizeCompressBlock + 4);
 
-                            WriteToFile(destinationStream, threadCompress);
-                        }
-
+                        Console.WriteLine("Reading thead {0} block {1}", Thread.CurrentThread.ManagedThreadId, i++);
                     }
+                    if (sourceStream.Position == sourceStream.Length)
+                    {
+                        processingDataBlocks.CompleteAdding();
+                    }
+
+
                 }
             }
         }
@@ -67,9 +63,17 @@ namespace Archiver
         {
             try
             {
-                processingDataBlocks.TryGetValue(threadNumber, out byte[] data);
-                var outCompress = DecompressBlock(data);
-                processingDataBlocks[threadNumber] = outCompress;
+                //while (processingDataBlocks1.TryDequeue(out Blocks data))
+                foreach (var data in processingDataBlocks.GetConsumingEnumerable())
+                {
+                    
+                    var outCompress = DecompressBlock(data.Block);
+                    dataBlocksToWrite.Add(data.ID, outCompress);
+                    Console.WriteLine("Processing thead {0} block {1}", Thread.CurrentThread.ManagedThreadId, data.ID);
+                }
+                autoResetEvents[threadNumber].Set();
+
+
             }
             catch (Exception e)
             {
@@ -98,14 +102,28 @@ namespace Archiver
             }
         }
 
-        private void WriteToFile(FileStream destinationStream, Thread[] threadCompress)
+        protected override void WriteToFile()
         {
-            for (int i = 0; i < countThreads; i++)
+            try
             {
-                threadCompress[i].Join();
-                processingDataBlocks.TryGetValue(i, out byte[] block);
-                destinationStream.Write(block, 0, block.Length);
+                using (FileStream destinationStream = File.Create(OutputFile))
+                {
+                    int i = 0;                    
+                    while (dataBlocksToWrite.GetValue(out var data))
+                    {
+
+                            destinationStream.Write(data, 0, data.Length);
+                            Console.WriteLine("Writting thead {0} block {1}", Thread.CurrentThread.ManagedThreadId, i++);
+                        
+
+                    }
+                }
             }
+            catch (Exception e)
+            {
+                Console.WriteLine("Ошибка записи в файл: {0}", e.Message);
+            }
+
         }
 
     }
