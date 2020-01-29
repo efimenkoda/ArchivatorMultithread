@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Archiver
 {
-    public class WriteBlockingCollection
+    public class BlockProcessingWriteCollection
     {
         private static int countThreads =  Environment.ProcessorCount;
         Dictionary<int,byte[]> dataBlocksToWrite;
@@ -16,7 +16,7 @@ namespace Archiver
         private bool completed = false;
         private int index = 0;
 
-        public WriteBlockingCollection()
+        public BlockProcessingWriteCollection()
         {
             dataBlocksToWrite = new Dictionary<int, byte[]>();
         }

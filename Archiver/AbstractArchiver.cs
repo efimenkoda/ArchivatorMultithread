@@ -15,7 +15,7 @@ namespace Archiver
         protected string InputFile { get; set; }
         protected string OutputFile { get; set; }
         protected BlockingCollection<Blocks> processingDataBlocks = new BlockingCollection<Blocks>(countThreads*10);
-        protected WriteBlockingCollection dataBlocksToWrite = new WriteBlockingCollection();
+        protected BlockProcessingWriteCollection dataBlocksToWrite = new BlockProcessingWriteCollection();
         protected AutoResetEvent[] autoResetEvents = new AutoResetEvent[countThreads];
         public AbstractArchiver(string inputFile, string outputFile)
         {

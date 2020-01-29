@@ -50,16 +50,14 @@ namespace Archiver
                     byte[] buffer = new byte[blockLength];
                     sourceStream.Read(buffer, 0, blockLength);
                     processingDataBlocks.Add(new Blocks(i, buffer));
-                    //processingDataBlocks1.Enqueue(new Blocks(i, buffer));
 
-                    Console.WriteLine("Reading thead {0} block {1}", Thread.CurrentThread.ManagedThreadId, i++);
+                    i++;
                 }
                 if (sourceStream.Position == sourceStream.Length)
                 {
                     processingDataBlocks.CompleteAdding();
 
                 }
-                
 
             }
         }
@@ -69,15 +67,13 @@ namespace Archiver
         {
             try
             {
-                //while (processingDataBlocks1.TryDequeue(out Blocks data))
                 foreach (var data in processingDataBlocks.GetConsumingEnumerable())
                 {
                     var outCompress = CompressBlock(data.Block);
                     dataBlocksToWrite.Add(data.ID, outCompress);
-
-                    Console.WriteLine("Processing thead {0} block {1}", Thread.CurrentThread.ManagedThreadId, data.ID);
+                    
                 }
-
+                
                 autoResetEvents[threadNumber].Set();
 
             }
@@ -114,7 +110,7 @@ namespace Archiver
                         {
                             binaryWriter.Write(data.Length);
                             binaryWriter.Write(data, 0, data.Length);
-                            Console.WriteLine("Writting thead {0} block {1}", Thread.CurrentThread.ManagedThreadId, i++);
+                            i++;
                         }
                     }
                 }
