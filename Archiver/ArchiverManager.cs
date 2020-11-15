@@ -40,7 +40,7 @@ namespace Archiver
             }
 
             outputFile = args[2];
-            if (inputFile.Length == 0 || File.Exists(outputFile+".gz"))
+            if (inputFile.Length == 0 || File.Exists(outputFile))
             {
                 Console.WriteLine("Расположение выходного файла не введено или такой файл уже существует");
                 return false;
@@ -75,8 +75,9 @@ namespace Archiver
                 }
                 Console.WriteLine(0);
             }
-            catch (Exception e)
+            catch (Exception)
             {
+                Console.WriteLine("Произошла ошибка во время сжатия/распаковки");
                 Console.WriteLine(1);
             }
 
